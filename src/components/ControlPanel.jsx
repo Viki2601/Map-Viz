@@ -17,7 +17,7 @@ export default function ControlPanel({ onRun, onPause, onReset, onFromSelect, on
     const algoColor = activeAlgo?.color || '#39ff14'
 
     return (
-        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="absolute bottom-14 lg:bottom-6 left-0 lg:left-3 z-10 w-full max-w-xl lg:px-4">
+        <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1 }} className="absolute bottom-16 lg:bottom-6 left-0 lg:left-3 z-10 w-full max-w-xl lg:px-4">
             <div className="rounded-2xl" style={{ background: 'rgba(6,8,6,0.23)', backdropFilter: 'blur(20px)', boxShadow: `0 0 20px ${algoColor}10`, padding: '16px' }}>
                 <div className="flex gap-1.5" style={{ marginBottom: '16px' }}>
                     {ALGORITHMS?.map((algo) => {

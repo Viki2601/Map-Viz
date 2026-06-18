@@ -15,10 +15,10 @@ export default function Legend({ routeFound }) {
     ]
 
     return (
-        <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4, duration: 0.4 }} className="absolute bottom-24 right-3 z-10 sm:bottom-6 sm:right-4">
-            <div className="glass-panel rounded-xl" style={{ background: 'rgba(6,8,6,0.23)', backdropFilter: 'blur(20px)', boxShadow: '0 0 20px rgba(0,0,0,0.6)', padding: "10px" }}>
+        <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4, duration: 0.4 }} className="absolute top-3 right-2 lg:bottom-24 lg:right-3 z-10 sm:bottom-6 sm:right-4">
+            <div className="glass-panel rounded-sm lg:rounded-xl" style={{ background: 'rgba(6,8,6,0.23)', backdropFilter: 'blur(20px)', boxShadow: '0 0 20px rgba(0,0,0,0.6)', padding: "10px" }}>
                 <button onClick={() => setCollapsed(!collapsed)} className="flex items-center justify-between w-full px-3 py-2 sm:cursor-default" style={{ color: 'var(--text-tertiary)' }}>
-                    <span className="text-[9px] sm:text-[12px] uppercase tracking-[0.15em] font-medium" style={{ marginBottom: "10px" }}>
+                    <span className="text-[9px] sm:text-[12px] uppercase tracking-[0.15em] font-medium" >
                         Legend
                     </span>
                     <motion.div animate={{ rotate: collapsed ? 180 : 0 }} className="sm:hidden">
