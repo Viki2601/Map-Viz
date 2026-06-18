@@ -33,7 +33,6 @@ export const CITY_PRESETS = {
     },
 }
 
-// Build bbox around a center point
 export function centerToBbox(lng, lat, radiusKm = 1.5) {
     const latDelta = radiusKm / 111
     const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180))
@@ -45,7 +44,6 @@ export function centerToBbox(lng, lat, radiusKm = 1.5) {
     }
 }
 
-// Merge two bboxes to cover both points
 export function mergeBboxes(bbox1, bbox2) {
     return {
         south: Math.min(bbox1.south, bbox2.south),
@@ -69,15 +67,22 @@ export async function fetchOSMRoads(bbox) {
     (._;>;);
     out body;
   `
-    const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`
-    const res = await fetch(url)
-    if (!res.ok) throw new Error(`Overpass API error: ${res.status}`)
+
+    // Use our server-side proxy to avoid CORS issues in production
+    const res = await fetch('/api/osm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+    })
+
+    if (!res.ok) throw new Error(`OSM fetch failed: ${res.status}`)
     const data = await res.json()
+    if (data.error) throw new Error(data.error)
+
     osmCache.set(key, data)
     return data
 }
 
-// Mapbox geocoding search
 export async function geocodeLocation(query, mapboxToken) {
     const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&types=place,locality,neighborhood,district,address&limit=5`
     const res = await fetch(url)
