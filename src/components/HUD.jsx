@@ -15,8 +15,8 @@ export default function HUD() {
 
     return (
         <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }} className="absolute top-3 left-3 z-10 sm:top-4 sm:left-4">
-            <div className="glass-panel rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3" style={{ boxShadow: `0 0 30px ${meta?.color}10`, padding: "10px" }}>
-                <div className="flex items-center gap-3 sm:gap-6">
+            <div className="glass-panel rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3" style={{ background: 'rgba(6,8,6,0.23)', backdropFilter: 'blur(20px)', boxShadow: `0 0 30px ${meta?.color}10`, padding: "10px" }}>
+                <div className="flex items-center gap-6">
                     <div className="flex flex-col gap-0.5 min-w-0">
                         <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] font-medium" style={{ color: 'var(--text-tertiary)' }}>Algorithm</span>
                         <div className="flex items-center gap-2">

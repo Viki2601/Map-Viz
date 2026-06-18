@@ -1,21 +1,11 @@
 'use client'
-
 import { useEffect, useRef, useCallback, useState } from 'react'
 import mapboxgl from 'mapbox-gl'
 import 'mapbox-gl/dist/mapbox-gl.css'
 import { useVisualizerStore } from '@/store/visualizerStore'
 import { edgeKey } from '@/lib/graphBuilder'
 
-const COLORS = {
-    edgeDefault: '#1a2a1a',
-    edgeVisited: '#39ff14',
-    edgeActive: '#f5c842',
-    edgePath: '#00cfff',
-    nodeDefault: 'rgba(255,255,255,0.08)',
-    nodeVisited: '#39ff14',
-    nodeActive: '#f5c842',
-    nodeCurrent: '#ff4d4d',
-}
+const COLORS = { edgeDefault: '#1a2a1a', edgeVisited: '#39ff14', edgeActive: '#f5c842', edgePath: '#00cfff', nodeDefault: 'rgba(255,255,255,0.08)', nodeVisited: '#39ff14', nodeActive: '#f5c842', nodeCurrent: '#ff4d4d', }
 
 export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, fromCoord, toCoord }) {
     const mapRef = useRef(null)
@@ -23,11 +13,10 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
     const [mapReady, setMapReady] = useState(false)
     const [mapLoading, setMapLoading] = useState(true)
 
-    // Keep refs for GeoJSON data to update in place
     const edgeFeaturesRef = useRef([])
     const nodeFeaturesRef = useRef([])
-    const edgeIndexRef = useRef(new Map()) // edgeKey -> index in features array
-    const nodeIndexRef = useRef(new Map()) // nodeId -> index in features array
+    const edgeIndexRef = useRef(new Map())
+    const nodeIndexRef = useRef(new Map())
 
     const store = useVisualizerStore()
 
@@ -35,16 +24,10 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
     useEffect(() => {
         if (!containerRef.current || mapRef.current) return
         mapboxgl.accessToken = mapboxToken || process.env.NEXT_PUBLIC_MAPBOX_TOKEN
-
         const map = new mapboxgl.Map({
-            container: containerRef.current,
-            style: 'mapbox://styles/mapbox/dark-v11',
-            center: center || [80.25, 13.06],
-            zoom: 14,
-            antialias: false,
-            trackResize: true,
-            fadeDuration: 0,
-            preserveDrawingBuffer: false,
+            container: containerRef.current, style: 'mapbox://styles/mapbox/dark-v11',
+            center: center || [80.25, 13.06], zoom: 14, antialias: false, trackResize: true,
+            fadeDuration: 0, preserveDrawingBuffer: false,
         })
 
         // Disable unnecessary controls for performance
@@ -57,7 +40,6 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
             setMapLoading(false)
         })
         return () => { map.remove(); mapRef.current = null; setMapReady(false) }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     // Fly to new center when location changes
@@ -71,16 +53,13 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
     useEffect(() => {
         if (!mapReady || !graph || !mapRef.current) return
         const map = mapRef.current
+            ;['path-line', 'path-glow', 'edges-glow', 'edges-core', 'nodes', 'markers'].forEach(id => {
+                if (map.getLayer(id)) map.removeLayer(id)
+            })
+            ;['edges', 'nodes-src', 'path-src', 'markers-src'].forEach(id => {
+                if (map.getSource(id)) map.removeSource(id)
+            })
 
-        // Clean up existing layers/sources
-        ;['path-line', 'path-glow', 'edges-glow', 'edges-core', 'nodes', 'markers'].forEach(id => {
-            if (map.getLayer(id)) map.removeLayer(id)
-        })
-        ;['edges', 'nodes-src', 'path-src', 'markers-src'].forEach(id => {
-            if (map.getSource(id)) map.removeSource(id)
-        })
-
-        // Build edge features with status property
         const edgeFeatures = []
         const edgeIndex = new Map()
         const seenEdges = new Set()
@@ -94,121 +73,58 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
                 const a = graph.nodes.get(fromId)
                 const b = graph.nodes.get(edge.to)
                 if (!a || !b) continue
-                edgeFeatures.push({
-                    type: 'Feature',
-                    properties: { key, status: 'default' },
-                    geometry: { type: 'LineString', coordinates: [[a.lng, a.lat], [b.lng, b.lat]] },
-                })
+                edgeFeatures.push({ type: 'Feature', properties: { key, status: 'default' }, geometry: { type: 'LineString', coordinates: [[a.lng, a.lat], [b.lng, b.lat]] }, })
                 edgeIndex.set(key, ei++)
             }
         }
 
-        // Build node features with status property
         const nodeFeatures = []
         const nodeIndex = new Map()
         let ni = 0
         for (const [, node] of graph.nodes) {
-            nodeFeatures.push({
-                type: 'Feature',
-                properties: { id: node.id, status: 'default' },
-                geometry: { type: 'Point', coordinates: [node.lng, node.lat] },
-            })
+            nodeFeatures.push({ type: 'Feature', properties: { id: node.id, status: 'default' }, geometry: { type: 'Point', coordinates: [node.lng, node.lat] }, })
             nodeIndex.set(node.id, ni++)
         }
 
-        // Store refs for later updates
         edgeFeaturesRef.current = edgeFeatures
         nodeFeaturesRef.current = nodeFeatures
         edgeIndexRef.current = edgeIndex
         nodeIndexRef.current = nodeIndex
 
-        // Add sources
-        map.addSource('edges', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: edgeFeatures },
-        })
-        map.addSource('nodes-src', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: nodeFeatures },
-        })
-        map.addSource('path-src', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] },
-        })
-        map.addSource('markers-src', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] },
-        })
+        map.addSource('edges', { type: 'geojson', data: { type: 'FeatureCollection', features: edgeFeatures }, })
+        map.addSource('nodes-src', { type: 'geojson', data: { type: 'FeatureCollection', features: nodeFeatures }, })
+        map.addSource('path-src', { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, })
+        map.addSource('markers-src', { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, })
 
-        // Edge glow layer — uses match on status
         map.addLayer({
             id: 'edges-glow', type: 'line', source: 'edges',
             layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: {
-                'line-color': [
-                    'match', ['get', 'status'],
-                    'visited', COLORS.edgeVisited,
-                    'active', COLORS.edgeActive,
-                    COLORS.edgeDefault,
-                ],
-                'line-width': [
-                    'match', ['get', 'status'],
-                    'visited', 5,
-                    'active', 8,
-                    0,
-                ],
+                'line-color': ['match', ['get', 'status'], 'visited', COLORS.edgeVisited, 'active', COLORS.edgeActive, COLORS.edgeDefault,],
+                'line-width': ['match', ['get', 'status'], 'visited', 5, 'active', 8, 0,],
                 'line-blur': 4,
                 'line-opacity': 0.5,
             }
         })
 
-        // Edge core layer
         map.addLayer({
             id: 'edges-core', type: 'line', source: 'edges',
             layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: {
-                'line-color': [
-                    'match', ['get', 'status'],
-                    'visited', COLORS.edgeVisited,
-                    'active', COLORS.edgeActive,
-                    COLORS.edgeDefault,
-                ],
-                'line-width': [
-                    'match', ['get', 'status'],
-                    'visited', 1.5,
-                    'active', 2.5,
-                    0.8,
-                ],
+                'line-color': ['match', ['get', 'status'], 'visited', COLORS.edgeVisited, 'active', COLORS.edgeActive, COLORS.edgeDefault,],
+                'line-width': ['match', ['get', 'status'], 'visited', 1.5, 'active', 2.5, 0.8,],
             }
         })
 
-        // Nodes layer
         map.addLayer({
             id: 'nodes', type: 'circle', source: 'nodes-src',
             paint: {
-                'circle-color': [
-                    'match', ['get', 'status'],
-                    'visited', COLORS.nodeVisited,
-                    'active', COLORS.nodeActive,
-                    'current', COLORS.nodeCurrent,
-                    COLORS.nodeDefault,
-                ],
-                'circle-radius': [
-                    'match', ['get', 'status'],
-                    'visited', 3,
-                    'active', 5,
-                    'current', 6,
-                    2,
-                ],
-                'circle-opacity': [
-                    'match', ['get', 'status'],
-                    'default', 0.4,
-                    0.9,
-                ],
+                'circle-color': ['match', ['get', 'status'], 'visited', COLORS.nodeVisited, 'active', COLORS.nodeActive, 'current', COLORS.nodeCurrent, COLORS.nodeDefault,],
+                'circle-radius': ['match', ['get', 'status'], 'visited', 3, 'active', 5, 'current', 6, 2,],
+                'circle-opacity': ['match', ['get', 'status'], 'default', 0.4, 0.9,],
             }
         })
 
-        // Found path layers
         map.addLayer({
             id: 'path-glow', type: 'line', source: 'path-src',
             layout: { 'line-cap': 'round', 'line-join': 'round' },
@@ -220,20 +136,12 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
             paint: { 'line-color': COLORS.edgePath, 'line-width': 3.5 }
         })
 
-        // Marker dots (A and B)
         map.addLayer({
             id: 'markers', type: 'circle', source: 'markers-src',
-            paint: {
-                'circle-radius': 10,
-                'circle-color': ['case', ['==', ['get', 'type'], 'from'], '#39ff14', '#ff7f50'],
-                'circle-stroke-width': 2.5,
-                'circle-stroke-color': '#ffffff',
-                'circle-opacity': 0.95,
-            }
+            paint: { 'circle-radius': 10, 'circle-color': ['case', ['==', ['get', 'type'], 'from'], '#39ff14', '#ff7f50'], 'circle-stroke-width': 2.5, 'circle-stroke-color': '#ffffff', 'circle-opacity': 0.95, }
         })
     }, [mapReady, graph])
 
-    // Draw path when found
     useEffect(() => {
         const map = mapRef.current
         if (!map || !map.getSource('path-src') || !graph) return
@@ -254,15 +162,10 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
 
         map.getSource('path-src').setData({
             type: 'FeatureCollection',
-            features: coords.length > 1 ? [{
-                type: 'Feature',
-                properties: {},
-                geometry: { type: 'LineString', coordinates: coords },
-            }] : [],
+            features: coords.length > 1 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords }, }] : [],
         })
     }, [pathEdges, graph])
 
-    // Draw A/B markers
     useEffect(() => {
         const map = mapRef.current
         if (!map || !map.getSource('markers-src')) return
@@ -280,23 +183,18 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
         map.getSource('markers-src').setData({ type: 'FeatureCollection', features })
     }, [fromCoord, toCoord])
 
-    // Update edge/node status via GeoJSON source data (survives pan/zoom)
     const updateVisualization = useCallback(() => {
-        const map = mapRef.current
-        if (!map) return
+        const map = mapRef.current;
+        if (!map) return;
+        const { visitedEdges, activeEdges, visitedNodes, activeNodes } = store;
+        const edgeFeatures = edgeFeaturesRef.current;
+        const nodeFeatures = nodeFeaturesRef.current;
+        const edgeIndex = edgeIndexRef.current;
+        const nodeIndex = nodeIndexRef.current;
+        if (edgeFeatures.length === 0 && nodeFeatures.length === 0) return;
+        let edgesChanged = false;
+        let nodesChanged = false;
 
-        const { visitedEdges, activeEdges, visitedNodes, activeNodes } = store
-        const edgeFeatures = edgeFeaturesRef.current
-        const nodeFeatures = nodeFeaturesRef.current
-        const edgeIndex = edgeIndexRef.current
-        const nodeIndex = nodeIndexRef.current
-
-        if (edgeFeatures.length === 0 && nodeFeatures.length === 0) return
-
-        let edgesChanged = false
-        let nodesChanged = false
-
-        // Update edge statuses
         for (const key of activeEdges) {
             const idx = edgeIndex.get(key)
             if (idx !== undefined && edgeFeatures[idx].properties.status !== 'active') {
@@ -312,7 +210,6 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
             }
         }
 
-        // Update node statuses
         for (const id of activeNodes) {
             const idx = nodeIndex.get(id)
             if (idx !== undefined && nodeFeatures[idx].properties.status !== 'active') {
@@ -328,7 +225,6 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
             }
         }
 
-        // Batch update sources
         if (edgesChanged && map.getSource('edges')) {
             map.getSource('edges').setData({
                 type: 'FeatureCollection',
@@ -343,12 +239,9 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
         }
     }, [store])
 
-    // Subscribe to store changes for visualization updates
     useEffect(() => {
-        // Use zustand's subscribe for efficient updates
         const unsub = useVisualizerStore.subscribe(
             (state) => {
-                // Check if any visualization-related state changed
                 return {
                     vn: state._visitedNodesVersion,
                     an: state._activeNodesVersion,
@@ -356,16 +249,13 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
                     ae: state._activeEdgesVersion,
                 }
             },
-            () => {
-                updateVisualization()
-            }
+            () => { updateVisualization() }
         )
-
         return unsub
     }, [updateVisualization])
 
-    // Also trigger on direct store changes (fallback)
-    const { _visitedNodesVersion, _activeNodesVersion, _visitedEdgesVersion, _activeEdgesVersion } = useVisualizerStore()
+    const { _visitedNodesVersion, _activeNodesVersion, _visitedEdgesVersion, _activeEdgesVersion } = useVisualizerStore();
+
     useEffect(() => {
         updateVisualization()
     }, [_visitedNodesVersion, _activeNodesVersion, _visitedEdgesVersion, _activeEdgesVersion, updateVisualization])
@@ -373,17 +263,11 @@ export default function MapVisualizer({ graph, center, mapboxToken, pathEdges, f
     return (
         <div className="relative w-full h-full">
             <div ref={containerRef} className="w-full h-full" />
-
-            {/* Loading overlay */}
             {mapLoading && (
-                <div className="absolute inset-0 flex items-center justify-center z-10"
-                    style={{ background: 'rgba(6,8,6,0.85)' }}>
+                <div className="absolute inset-0 flex items-center justify-center z-10" style={{ background: 'rgba(6,8,6,0.85)' }}>
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-                            style={{ borderColor: '#39ff1444', borderTopColor: 'transparent' }} />
-                        <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
-                            Loading map...
-                        </span>
+                        <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: '#39ff1444', borderTopColor: 'transparent' }} />
+                        <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>Loading map...</span>
                     </div>
                 </div>
             )}
