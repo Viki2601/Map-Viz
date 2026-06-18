@@ -232,7 +232,7 @@ export default function Home() {
       <Legend routeFound={routeFound} />
       <ControlPanel onRun={handleRun} onPause={handlePause} onReset={handleReset} onFromSelect={handleFromSelect} onToSelect={handleToSelect} isLoading={isLoading} mapboxToken={MAPBOX_TOKEN} fromLabel={fromLocation?.label} toLabel={toLocation?.label} routeFound={routeFound} routeDistanceKm={routeDistKm} />
 
-      {!error && (
+      {error && (
         <div className="absolute top-4 right-4 z-20 rounded-lg text-sm max-w-xs" style={{ background: 'rgba(255,60,60,0.12)', border: '0.5px solid rgba(255,60,60,0.3)', padding: "10px", color: '#ff9999' }}>
           ⚠ {error}
         </div>
